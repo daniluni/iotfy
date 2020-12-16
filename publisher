@@ -1,0 +1,50 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* ssid = "Arya"; 
+const char* password = "tyrionlannister07"; 
+const char* mqttServer = "192.168.0.12";
+const int mqttPort = 1883;
+const char* mqttUser = "mqtt username";
+const char* mqttPassword = "mqtt password";
+int sensorPin=33;
+int sensorValue=0; 
+char* mensaje = "";
+WiFiClient espClient;
+PubSubClient client(espClient);
+ 
+void setup() {
+  Serial.begin(115200);  //baudios del puerto
+  pinMode(sensorPin,INPUT); //queda de salida la aguja 33
+  WiFi.begin(ssid, password); //Se inicia la wi-fi 
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.println("Conectando a la WiFi..");
+  }
+  Serial.println("Conectado a la red WiFi");
+  client.setServer(mqttServer, mqttPort);
+  while (!client.connected()) {
+      Serial.println("Conectandose a MQTT...");
+      if (client.connect("ESP32Client", mqttUser, mqttPassword )) {
+          Serial.println("conectado");
+      } else {
+          Serial.print("Error con estado ");
+          Serial.print(client.state());
+          delay(2000);
+      }
+   }
+}
+ 
+void loop() {
+  client.loop();
+  sensorValue = analogRead(sensorPin); 
+  if (sensorValue==0) {
+      mensaje="11,encendido";  
+    }  
+  else {
+      mensaje="11,apagado"; 
+  }
+  delay(2000);
+  client.publish("topico", mensaje);
+  Serial.print(mensaje);
+}
